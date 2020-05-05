@@ -413,7 +413,7 @@ def visualize_drift(shifts, geom, temps, unit,
     
     resolution = 20
     y_scale = 1.0
-    geom = np.loadtxt('/media/cat/1TB/data/synthetic/p1_g0_t0.imec0.ap_geom.txt')
+    #geom = np.loadtxt('/media/cat/1TB/data/synthetic/p1_g0_t0.imec0.ap_geom.txt')
 
     #for ctr, unit in enumerate(units):
     (template_shifted, channels) = make_drift_template(

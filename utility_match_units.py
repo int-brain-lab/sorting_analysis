@@ -204,7 +204,8 @@ def load_ks2_spikes(root_dir, n_channels,n_times):
     
     return spike_train
 
-def reload_ks2_templates(root_dir, spike_train, data_type):
+def reload_ks2_templates(root_dir, spike_train, data_type,
+                         n_channels, n_times):
     
     fname_out = root_dir + '/templates_reloaded_good.npy'
     if os.path.exists(fname_out)==False:
