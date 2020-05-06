@@ -333,7 +333,7 @@ class WaveForms(object):
         return correlated_noise
 
 # function
-def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate):
+def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit):
    
     # 1ms wide bins used for now;
     bin_width = 0.001 # ms precise bins;
@@ -364,8 +364,10 @@ def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate):
     # convert from milliseconds to sample_rate sample-time + add random shift so 
     # not all spike trains land exactly on sample 0; 
     # Cat: TODO add individual spike-time shifts, and avoid refractory violations;
-    times = idx * sample_rate//1000 +np.random.randint(sample_rate//1000,size=1)
-        
+    #times = idx * sample_rate//1000 +np.random.randint(sample_rate//1000,size=1)
+    times = idx * sample_rate//1000 + np.random.randint(sample_rate//1000,size=idx.shape[0])
+
+    
     return (times, scale)
 
 
@@ -461,9 +463,10 @@ def generate_synthetic_data(root_dir,
 
     n_spikes = []
     scales = []
-    for k in range(units.shape[0]):
+    for k in range(n_units):
         times, scale = generate_poisson_uniform_firingrate2(rec_len_sec,
-                                                           sample_rate)
+                                                            sample_rate,
+                                                            k)
         #print ("Unit: ", k, " spikes: ", times)
         n_spikes.append(times)
         scales.append(scale)
@@ -504,10 +507,15 @@ def generate_synthetic_data(root_dir,
                 idx = np.where(np.logical_and(times>window[0], times<=window[1]))[0]
                 times = times[idx]
                 
-                # 
+                # load scale for unit; 
                 scale1 = scales[ctr2]
+                
+                # select values within time window;
                 scale2 = scale1[idx]
-
+    
+                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'times.npy',times)
+                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'scale.npy',scale2)
+                
                 # generate ids and make spike_train
                 idx = times*0+ctr2
                 temp_train = np.vstack((times,idx)).T
@@ -525,10 +533,26 @@ def generate_synthetic_data(root_dir,
                 
                 #data_synthetic[times[:,None]+np.arange(101), :] += temps_insert[unit] * scale
                 # add scaled data requires copies of templates and transposing the arrays x 2
-                data_synthetic[times[:,None]+np.arange(101), :] += \
+                
+                # split the data into spikes > 101 timesteps apart; and those < 101 timesteps apart
+                idx_s = np.where((times[1:]-times[:-1])>n_times)[0]
+                times_s = times[idx_s]
+                scale2_s = scale2[idx_s]
+                data_synthetic[times_s[:,None]+np.arange(n_times), :] += \
                         np.multiply(
-                                    np.repeat(temps_insert[unit][None],scale2.shape[0],axis=0).transpose(2,1,0),
-                                    scale2).transpose(2,1,0)
+                                    np.repeat(temps_insert[ctr2][None],scale2_s.shape[0],axis=0).transpose(2,1,0),
+                                    scale2_s).transpose(2,1,0)
+                
+                # insert spikes that are close to others
+                idx_r = np.delete(np.arange(times.shape[0]),idx_s)
+                times_r = times[idx_r]
+                scale2_r = scale2[idx_r]
+                data_synthetic[times_r[:,None]+np.arange(n_times), :] += \
+                        np.multiply(
+                                    np.repeat(temps_insert[ctr2][None],scale2_r.shape[0],axis=0).transpose(2,1,0),
+                                    scale2_r).transpose(2,1,0)
+                
+            
             print ("************")
             print ("")
             print ("")
