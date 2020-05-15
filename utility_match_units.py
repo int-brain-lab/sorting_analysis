@@ -64,7 +64,7 @@ def binary_reader_waveforms(filename, n_channels, n_times, spikes, data_type='fl
 @jit
 def match_units(s1, s2):
     ctr=0
-    max_diff = 5
+    max_diff = 15
     matched_spike_times = []
     for s in s1:
         if np.min(np.abs(s2-s))<=max_diff:
@@ -92,7 +92,9 @@ def search_spikes_parallel(units_ground_truth,
     for unit in units_ground_truth:
         #ptps_unit = templates_sorted[unit].ptp(0)
         ptps_unit = templates_gt[unit].ptp(0)
-        max_chans_unit = np.argsort(ptps_unit)[::-1][:40]  #check largest nearby channels;
+        #max_chans_unit = np.argsort(ptps_unit)[::-1][:40]  #check largest nearby channels;
+        max_chans_unit = np.argsort(ptps_unit)[::-1]  #check largest nearby channels;
+       
         # find nearest gt templates
         ids_nearest_sorted = np.where(np.in1d(max_chans_sorted, max_chans_unit))[0]
 
@@ -487,7 +489,7 @@ def plot_single_unit(root_dir, selected_unit,
 
     # *************** PLOT RESULTS ************
     fig = plt.figure(figsize=(16,8))
-    gs = gridspec.GridSpec(n_matches2+1, 2)
+    gs = gridspec.GridSpec(n_matches2+1, 5)
     #gs.update(wspace=0.05, hspace=0.05)
         
     # ************ PLOT WAVEFORMS **************
@@ -503,8 +505,8 @@ def plot_single_unit(root_dir, selected_unit,
     plt.ylabel("Injected\ntemplate\n(max-chan; SU)", fontsize=14)
     
     # ************ SCATTER PLOT GROUND TRUTH UNIT **************
-    ax = plt.subplot(gs[0, 1])
-    plt.scatter(spk_gt/30000., ptps_gt,s=150, c='black', alpha=.5)
+    ax = plt.subplot(gs[0, 1:])
+    plt.scatter(spk_gt/30000., ptps_gt,s=150, c='black', alpha=.1)
     plt.xticks([])
     plt.ylim(bottom=0)
     plt.title("PTP of ground truth injected unit", fontsize=14)
@@ -514,26 +516,38 @@ def plot_single_unit(root_dir, selected_unit,
     # track TP rates; 
     TP_rate = []
     for k in range(len(ptps_sorted)):
-        ax = plt.subplot(gs[k+1, 1])
+        ax = plt.subplot(gs[k+1, 1:])
         
         # plot all PTP values for all spikes in sorted unit   
         #print (" Times sorted: ", times_sorted_all[k])
         #print (ptps_sorted_all[k])
         ax.scatter(times_sorted_all[k]/30000., ptps_sorted_all[k],s=150, 
-                    c=clrs[k], alpha=.2)    
+                    c=clrs[k], alpha=.1)    
             
         # plot PTP values for sorted spikes matching ground truth unit
         if len(times_sorted[k])>0:
-            ax.scatter(times_sorted[k]/30000., ptps_sorted[k],s=150, c='black', alpha=.5)
+            ax.scatter(times_sorted[k]/30000., ptps_sorted[k],s=150, c='black', alpha=.1)
         
         # label infoormation
         plt.ylim(bottom=0)
         
         size = np.sort(matcher.venn_array[selected_unit])[::-1][k]
-        tot_spikes = matcher.n_spikes_array[selected_unit]
+        tot_spikes = matcher.n_spikes_array[selected_unit]  # spikes in the ground truth unit
         tp_rate = size/float(tot_spikes)   
         
-        plt.title("Match #"+str(k)+ ", TP: "+str(round(tp_rate*100.,1))+"%", fontsize=14)
+        # compute purity and compleness
+        id_ = idx_sorted[k]
+        
+        # match spikes in the sorted unit
+        n_spikes_sorted_unit = np.where(matcher.spike_train_sorted[:,1]==
+                          matched_units[id_])[0].shape[0]
+        
+        purity = size/float(n_spikes_sorted_unit)*100.
+        completeness = size/float(tot_spikes)*100.
+        
+        #plt.title("Match #"+str(k)+ ", TP: "+str(round(tp_rate*100.,1))+"%", fontsize=14)
+        plt.title("Match #"+str(k)+ ", Purity: "+str(round(purity,1))+"%"+
+                  ", Completness: "+str(round(completeness,1))+"%", fontsize=14)
         if k <(len(ptps_sorted)-1):
             plt.xticks([])
         
