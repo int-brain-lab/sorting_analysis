@@ -346,8 +346,11 @@ def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit):
     diffs[idx2]=100
     
     # set scale
-    scale = np.exp((diffs-100)/200)
+    #scale = np.exp((diffs-100)/200)
+    scale = np.exp((diffs-100)/1000)
     scale = np.hstack((1.0,scale))
+    
+    print ("TODO: implement randomized scaling")
       
     # convert from milliseconds to sample_rate sample-time + add random shift so 
     # not all spike trains land exactly on sample 0; 
@@ -501,15 +504,15 @@ def generate_synthetic_data(root_dir,
                 # select values within time window;
                 scale2 = scale1[idx]
     
-                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'times.npy',times)
-                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'scale.npy',scale2)
+                #np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'times.npy',times)
+                #np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'scale.npy',scale2)
                 
                 # generate ids and make spike_train
                 idx = times*0+ctr2
                 temp_train = np.vstack((times,idx)).T
                 spike_train = np.vstack((spike_train, temp_train))
                 if (ctr2%50==0):
-                    print (" inserting unit: ", ctr2, unit)
+                    print (" inserting unit: ", ctr2, times[:10], scale2[:10])
                     #print (" times: ", times.shape, times[:10])
                     #print (" scale: ", scale2.shape, scale2[:10])
 #                     print (temps_insert[unit].shape, scale.shape)
