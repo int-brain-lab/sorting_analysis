@@ -99,6 +99,7 @@ def make_drift_template(geom,
     
     ''' Make the drift interpolation
     '''
+    cmap = cm.get_cmap('viridis',shifts.shape[0])
     resolution = 20
     y_scale = 1.0
 
@@ -112,6 +113,7 @@ def make_drift_template(geom,
         dists.append(np.linalg.norm(geom[max_chan]-geom[k]))
     dists=np.array(dists)
 
+    # select neighbouring channels within distance of neuron max channel
     neighbour_chans = np.where(dists<radius)[0]
 
     if plotting:
@@ -123,42 +125,36 @@ def make_drift_template(geom,
     final_channels = []
     final_templates =[]
 
-    # 
+    # function that computes drift
+    # loop over each vertical column to fit gaussian and resample data
     vertical_cols_x_val = np.unique(geom[neighbour_chans][:,0])
     for vertical_col in vertical_cols_x_val:
 
+        # pick all channels that are in the vertical column
         idx = np.where(geom[neighbour_chans,0]==vertical_col)
-        #print ("local vertical geom: ", geom[neighbour_chans[idx]][:,1])
-        y_vals = geom[neighbour_chans[idx]]
-
+        
+        # get ptps of selected unit
         ptp_local = temps[unit].ptp(0)
-        #print (ptp_local[neighbour_chans[idx]])
 
-        x = y_vals[:,1]
-        data = ptp_local[neighbour_chans[idx]]
+        # select ptps of vertial col channels 
+        ptp_distribution = np.asarray(ptp_local[neighbour_chans[idx]])
 
-        chan_ids = np.arange(data.shape[0])
-        chan_ids = np.asarray(chan_ids)
-        ptp_distribution = np.asarray(data)
-
-        n = len(ptp_distribution)  ## <---
-        mean = sum(ptp_distribution*chan_ids)/n
-        sigma = np.lib.scimath.sqrt(sum(ptp_distribution*(chan_ids-mean)**2)/n)
+        # enumerate the channels selected: 0, 1, ...
+        chan_ids = np.asarray(np.arange(ptp_distribution.shape[0]))
 
         # ***********************************
         # draw the original template
         max_chan = temps[unit].ptp(0).argmax(0)
-        # select vertical 
-        idx_vertical_col = np.where(geom[neighbour_chans,0]==geom[max_chan,0])
+        
+        # selected channels and save them for later  
         final_channels.append(neighbour_chans[idx])
 
+        # grab the template for the single column selected
         temp_single_col = temps[unit][:,neighbour_chans[idx]]
-        ptps_single_col = temp_single_col.ptp(0)
-        #print ("ptps_single_col :", ptps_single_col)
 
         # find / interpolate channel centered template
         try:
-            popt,pcov = curve_fit(gaus,chan_ids,ptp_distribution,
+            popt,pcov = curve_fit(gaus, chan_ids, ptp_distribution,
                              maxfev=1000)#,p0=[0.18,mean,sigma])  ## <--- leave out the first estimation of the parameters
         except:
             print ("Gaussian couldn't be fit: unit ", unit)
@@ -171,50 +167,42 @@ def make_drift_template(geom,
                          ptp_distribution.shape[0]*resolution )  ## <--- calculate against a continuous variable
         fitted= gaus(xx,*popt)
 
+        # this function gets the peak of the interpolated neuron;
+        # i.e. returns the approximate location on y-axis; and ptp value at the max
         (ptp_fitted_centred, ptp_default_template) = make_default_template(
                               temps[unit][:,neighbour_chans[idx]], fitted, xx, 
                               resolution, chan_ids, ptp_distribution)
 
-        #shifts = np.array([-1])
-        cmap = cm.get_cmap('viridis',shifts.shape[0])
-
+        # loop over each shift
         for ctr, shift in enumerate(shifts):
             #shift = 0.5
             temp_scaling = make_shifted_templates(ptp_fitted_centred, 
-                                   temps[unit][:,neighbour_chans[idx]],
-                                   shift, resolution, xx, cmap(ctr))
+                                                  temps[unit][:,neighbour_chans[idx]],
+                                                  shift, 
+                                                  resolution, 
+                                                  xx, 
+                                                  cmap(ctr))
 
-            # initialize the shifted template
+            # initialize shifted template array to be filled
             temp_temp = np.zeros(temp_single_col.shape)
 
             # shift the templates if drift is > 1 chan
-            # note this should have zero filling for templates that roll too far
+            # TODO: have zero filling for templates that roll too far
             col_shift = int(shift)
-            temp_single_col_local = np.roll(temp_single_col,col_shift,axis=1)
+            temp_single_col_local = np.roll(temp_single_col, col_shift, axis=1)
 
-            # get reisudal shift <1.0 value
+            # shift columns one more time if residual shift <1.0 value
             shift_local = (abs(shift)-int(abs(shift)))*np.sign(shift)
+            offset = 0
             if shift_local<0:
-                temp_single_col_local = np.roll(temp_single_col,-1,axis=1)
+                temp_single_col_local = np.roll(temp_single_col_local,-1,axis=1)
+                shift_local = 1+shift_local
 
             # blend templates from 2nd to 2nd last
-            for k in range(1,temp_temp.shape[1]-1, 1):
-                # blend template
-                if shift_local>=0:
-                    if shift_local>0.5:
-                        temp_local = (temp_single_col_local[:,k-1]*(1-shift_local)+\
-                                      temp_single_col_local[:,k]*(shift_local))
-                    else:
-                        temp_local = (temp_single_col_local[:,k-1]*(shift_local)+\
-                                     temp_single_col_local[:,k]*(1-shift_local))
-                else:
-                    shift_local= -shift_local
-                    if shift_local>0.5:
-                        temp_local = (temp_single_col_local[:,k-1]*(1-shift_local)+\
-                                      temp_single_col_local[:,k]*(shift_local))
-                    else:
-                        temp_local = (temp_single_col_local[:,k-1]*(shift_local)+\
-                                      temp_single_col_local[:,k]*(1-shift_local))
+            for k in range(1, temp_temp.shape[1]-1, 1):
+   
+                temp_local = (temp_single_col_local[:,k]*(1-shift_local)+\
+                              temp_single_col_local[:,k-1]*(shift_local))
 
                 temp_local = temp_local/temp_local.ptp(0)
                 #temp_local = temp_local #*temp_scaling[k] #/ptps_single_col[k]
@@ -358,8 +346,7 @@ def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit):
     diffs[idx2]=100
     
     # set scale
-    #scale = np.exp((diffs-100)/200)
-    scale = np.exp((diffs-100)/1000)
+    scale = np.exp((diffs-100)/200)
     scale = np.hstack((1.0,scale))
       
     # convert from milliseconds to sample_rate sample-time + add random shift so 
@@ -514,15 +501,15 @@ def generate_synthetic_data(root_dir,
                 # select values within time window;
                 scale2 = scale1[idx]
     
-                #np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'times.npy',times)
-                #np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'scale.npy',scale2)
+                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'times.npy',times)
+                np.save('/media/cat/1TB/temp/'+str(ctr2)+"_"+'scale.npy',scale2)
                 
                 # generate ids and make spike_train
                 idx = times*0+ctr2
                 temp_train = np.vstack((times,idx)).T
                 spike_train = np.vstack((spike_train, temp_train))
                 if (ctr2%50==0):
-                    print (" inserting unit: ", ctr2, times[:10], scale2[:10])
+                    print (" inserting unit: ", ctr2, unit)
                     #print (" times: ", times.shape, times[:10])
                     #print (" scale: ", scale2.shape, scale2[:10])
 #                     print (temps_insert[unit].shape, scale.shape)
