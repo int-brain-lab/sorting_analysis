@@ -404,8 +404,11 @@ def select_ground_truth_units(root_dir,fname_templates,n_templates,
 def visualize_drift(shifts, geom, temps, unit,
                     radius):
     
+    import matplotlib.patches as mpatches
+
     resolution = 20
     y_scale = 1.0
+    x_scale = 10.0
     #geom = np.loadtxt('/media/cat/1TB/data/synthetic/p1_g0_t0.imec0.ap_geom.txt')
 
     #for ctr, unit in enumerate(units):
@@ -416,16 +419,27 @@ def visualize_drift(shifts, geom, temps, unit,
                            shifts,
                            radius,
                            plotting=False)
-   
+    print (shifts.shape, "shifts: ", shifts)
     fig=plt.figure()
+    ax=plt.subplot(111)
     cmap = cm.get_cmap('viridis',shifts.shape[0])
+    
+ 
     for k in range(len(template_shifted)):
-        plt.plot((geom[channels,0][:,None]+ \
-                  np.arange(temps.shape[1])/5.).transpose() ,
+        ax.plot((geom[channels,0][:,None]+ \
+                  np.arange(temps.shape[1])/x_scale).transpose() ,
                   template_shifted[k]*y_scale+geom[channels,1], 
                   c=cmap(k))
 
+    labels = []
+    for p in range(shifts.shape[0]):
+        patch_j = mpatches.Patch(color = cmap(p), label = "shift: "+str(round(shifts[p],1)))
+        labels.append(patch_j)
+    #plt.legend(handles=labels)
+    ax.legend(handles = labels, fontsize=8)
+
     plt.title("Shifted template: "+str(unit))
+    #plt.legend()
     plt.show()
 
     
