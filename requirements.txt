@@ -1,0 +1,17 @@
+scipy
+numpy
+matplotlib
+seaborn
+pandas
+scikit-learn
+numba
+opencv-python
+tables
+h5py
+tqdm
+flake8
+pytest
+glob2
+matplotlib-venn
+parmap
+hdf5storage

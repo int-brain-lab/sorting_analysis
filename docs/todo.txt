@@ -1,0 +1,15 @@
+1) Repository organization document
+
+2) Example notebooks
+	a) generate
+	b) compare
+
+3) Comparison pipeline
+	a) build hamming window bandpass filter ([300 6000])
+	b) filter and CAR raw data
+	c) extract waveforms
+	d) compute features
+
+4) Misc
+	a) add more detailed description to readme
+	b) incorporate CI
