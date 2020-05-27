@@ -4,4 +4,5 @@ This file contains a curated, chronologically ordered list of notable changes ma
 
 ## [Most Recent Commits](https://github.com/int-brain-lab/sorting_analysis/commits/master)
 
-- reorganized repository (most recent commit)
+- removed old/redundant folders (most recent commit)  
+- reorganized repository [(4008a3c)](https://github.com/int-brain-lab/sorting_analysis/commit/4008a3c42412fa97034da99159f0aeb43ab00147])
