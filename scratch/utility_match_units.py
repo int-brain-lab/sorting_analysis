@@ -349,8 +349,9 @@ def reload_ks2_templates(root_dir, spike_train, data_type,
 
 class Match_to_ground_truth(object):
 
-    def __init__(self, root_dir, spike_train_sorted, templates_sorted):
+    def __init__(self, root_dir, spike_train_sorted, templates_sorted, n_cpus):
         
+        self.n_cpus = n_cpus
         self.root_dir = root_dir
         self.spike_train_sorted = spike_train_sorted
         self.templates_sorted = templates_sorted
@@ -440,7 +441,7 @@ class Match_to_ground_truth(object):
                               self.spike_train_sorted,
                               self.root_dir,
                               out_dir,
-                              pm_processes=6)
+                              pm_processes=self.n_cpus)
 
         
     def load_matches(self, out_dir):
