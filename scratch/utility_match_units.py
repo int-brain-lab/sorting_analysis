@@ -1,6 +1,6 @@
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -13,6 +13,7 @@ import shutil
 import cv2
 import glob2
 import parmap
+import math
 
 from numba import jit
 
@@ -150,11 +151,12 @@ def search_spikes_parallel_single_unit(unit_ground_truth,
                                       max_chans_sorted,
                                       spike_train_gt,
                                       spike_train_sorted,
-                                      root_dir):
+                                      root_dir,
+                                      out_dir):
 
                                 
     # check to see if data laready saved
-    fname = root_dir+'/matches/'+str(unit_ground_truth)+'.npz'
+    fname = root_dir+'/matches/'+out_dir+str(unit_ground_truth)+'.npz'
     if os.path.exists(fname)==False:
         
         n_spikes = []
@@ -262,8 +264,8 @@ def load_ks2_spikes(root_dir, n_channels,n_times):
         ids, counts = np.unique(spike_train[:,1], return_counts=True)
 
         # parse KS2 units and keep only ones with minimum or max firing rates
-        min_spikes = 600/4
-        max_spikes = 6000*500
+        min_spikes = 1
+        max_spikes = 1E10
 
         good_units_ids = np.where(np.logical_and(counts>=min_spikes, counts<=max_spikes))[0]
         print ("# of good units: ", good_units_ids.shape[0], " of total KS2 units: ", ids.shape[0])
@@ -365,21 +367,60 @@ class Match_to_ground_truth(object):
         #print ("max chans gt: ", self.max_chans_gt)
 
         # load sorted templates
-        #print ("Templates sorted: ", self.templates_sorted.shape)
         self.units_sorted = np.arange(self.templates_sorted.shape[0])
         self.max_chans_sorted = self.templates_sorted.ptp(1).argmax(1)
 
         #print ("calling matchi units")
-        self.match_units()
+        self.match_units('/match_to_truth/')
         
-    def match_units(self):
-        fname = self.root_dir + 'matches_res.npy'
+        
+        # SWITCH IDENTITY AND RERUN
+        
+        # load ground truth data
+        self.spike_train_gt = spike_train_sorted
+        self.templates_gt = templates_sorted
+
+        self.units_ground_truth = np.arange(self.templates_gt.shape[0])
+        self.max_chans_gt = self.templates_gt.ptp(1).argmax(1)
+        #print ("max chans gt: ", self.max_chans_gt)
+
+        # load sorted templates
+        self.spike_train_sorted = np.load(self.root_dir + 'ground_truth/spike_train_ground_truth.npy')
+        self.templates_sorted = np.load(self.root_dir + 'ground_truth/templates_ground_truth.npy')
+        self.units_sorted = np.arange(self.templates_sorted.shape[0])
+        self.max_chans_sorted = self.templates_sorted.ptp(1).argmax(1)
+                
+        self.match_units('/match_to_sort/')
+        
+    def load_data(self, spike_train_sorted, templates_sorted):
+       
+        self.spike_train_sorted = spike_train_sorted
+        self.templates_sorted = templates_sorted
+        
+        self.n_times = templates_sorted.shape[1]
+        self.n_channels = templates_sorted.shape[2]
+        
+        # load ground truth data
+        self.spike_train_gt = np.load(self.root_dir + 'ground_truth/spike_train_ground_truth.npy')
+        self.templates_gt = np.load(self.root_dir + 'ground_truth/templates_ground_truth.npy')
+        
+        
+    def match_units(self, out_dir):
         
         try:
             os.mkdir(self.root_dir+'/matches/')
         except:
             pass
+
+        try:
+            os.mkdir(self.root_dir+'/matches/'+out_dir)
+        except:
+            pass
+
+
             
+        #fname = self.root_dir + 'matches_res_'+out_dir+'.npy'
+
         #if os.path.exists(fname)==False:
 
             # self.units_split = np.array_split(self.units_ground_truth, 6)
@@ -398,8 +439,11 @@ class Match_to_ground_truth(object):
                               self.spike_train_gt,
                               self.spike_train_sorted,
                               self.root_dir,
+                              out_dir,
                               pm_processes=6)
 
+        
+    def load_matches(self, out_dir):
         #else:
         #    res = np.load(fname, allow_pickle=True)
 
@@ -414,9 +458,12 @@ class Match_to_ground_truth(object):
         self.unit_ids = []
         #print (" # chunks: ", len(res))
 
-        for unit in range(self.units_ground_truth.shape[0]):
+        fnames = os.listdir(self.root_dir+'/matches/'+out_dir)
+
+        #for unit in range(self.units_ground_truth.shape[0]):
+        for unit in range(len(fnames)):
                      
-            fname =  self.root_dir+'/matches/'+str(unit)+'.npz'
+            fname =  self.root_dir+'/matches/'+out_dir+str(unit)+'.npz'
             res = np.load(fname,allow_pickle=True)
                 # n_spikes_array=n_spikes_array, 
                 # ids_matched=ids_matched, 
@@ -449,9 +496,11 @@ class Match_to_ground_truth(object):
 
         ptps = self.templates_gt.ptp(1).max(1)
 
+        n_col = int(math.sqrt(len(self.n_spikes))+1)
+        n_row = int(math.sqrt(len(self.n_spikes))+1)
         #n_spikes_array.
         for k in range(len(self.venn_array)):
-            ax=plt.subplot(10,10,k+1)
+            ax=plt.subplot(n_col,n_row,k+1)
 
             n_matches = len(self.venn_array[k])
             sizes = np.sort(self.venn_array[k])[::-1][:n_matches2]
