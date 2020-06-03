@@ -16,6 +16,8 @@ dependencies:
   - numba
   - opencv
   - pytables
+  - ipympl
+  - nodejs
   - h5py
   - tqdm
   - flake8
