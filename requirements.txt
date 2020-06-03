@@ -1,3 +1,6 @@
+ipython
+jupyter
+jupyterlab
 scipy
 numpy
 matplotlib
@@ -5,8 +8,10 @@ seaborn
 pandas
 scikit-learn
 numba
-opencv-python
-tables
+opencv
+pytables
+ipympl
+nodejs
 h5py
 tqdm
 flake8

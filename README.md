@@ -6,11 +6,12 @@ Requires python >=3.6 and the python packages specified in our [requirements](ht
 
 ## Using this repository
 
-In order to use the code in this repository, first clone this repository and create a virtual environment with the required packages. If you're using Anaconda, you can follow the below steps to do this, which will create and activate the `sorting_analysis` conda environment. Open your system terminal, navigate to the directory you wish to clone into, and run:
+In order to use the code in this repository, first clone this repository, create a virtual environment with the required packages, and add the repository to your python path. If you're using Anaconda, you can follow the below steps to do this, which will create and activate the `sorting_analysis` conda environment. Open your system terminal, navigate to the directory you wish to clone into, and run:
 
 ```
-git clone https://github.com/int-brain-lab/sorting_analysis
-cd sorting_analysis
-conda env create -f sorting_analysis_env.yaml
-conda activate sorting_analysis
+git clone https://github.com/int-brain-lab/sorting_analysis   # clone repo
+cd sorting_analysis                                           # cd into repo directory
+conda env create -f sorting_analysis_env.yaml                 # create environment
+conda activate sorting_analysis                               # activate environment
+conda develop ./sorting_analysis                              # add repo to python path
 ```
