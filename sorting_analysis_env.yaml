@@ -1,23 +1,24 @@
 name: sorting_analysis
 channels:
-	- defaults
-	- conda-forge
+  - defaults
+  - conda-forge
 dependencies:
-	- python >=3.6
-	- scipy
-	- numpy
-	- matplotlib
-	- seaborn
-	- pandas
-	- scikit-learn
-	- numba
-	- opencv
-	- pytables
-	- h5py
-	- tqdm
-	- flake8
-	- pytest
-	- glob2
-	- matplotlib-venn
-	- parmap
-	- hdf5storage
+  - python >=3.6
+  - ipython
+  - scipy
+  - numpy
+  - matplotlib
+  - seaborn
+  - pandas
+  - scikit-learn
+  - numba
+  - opencv
+  - pytables
+  - h5py
+  - tqdm
+  - flake8
+  - pytest
+  - glob2
+  - matplotlib-venn
+  - parmap
+  - hdf5storage
