@@ -1,5 +1,5 @@
 """
-Creates comparative visualizations across spike sorters via after loading sorted data via the code in `load.py`
+Creates comparative visualizations across spike sorters via after loading sorted data via the code in `process.py`
 """
 
 
