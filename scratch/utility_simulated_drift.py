@@ -350,8 +350,10 @@ def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit):
     scale = np.exp((diffs-100)/1000)
     scale = np.hstack((1.0,scale))
     
-    print ("TODO: implement randomized scaling")
-      
+    # implement uniform scaling of -10%..+10% of each spike
+    scaling = np.random.rand(scale.shape[0])*0.2+0.9
+    scale = scale*scaling
+          
     # convert from milliseconds to sample_rate sample-time + add random shift so 
     # not all spike trains land exactly on sample 0; 
     # Cat: TODO add individual spike-time shifts, and avoid refractory violations;
