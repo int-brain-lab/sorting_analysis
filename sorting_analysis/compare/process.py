@@ -94,7 +94,6 @@ class SorterOutput:
                      d.joinpath('clusters.waveforms.npy')]
 
         # Check that files can be found and load em.
-        f_path = len(files) * [None]
         for f in files:
             assert f.exists(), FileNotFoundError(f'Cannot find {f}')
         self.ts = np.load(files[0])
