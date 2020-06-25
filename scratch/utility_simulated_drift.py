@@ -321,13 +321,15 @@ class WaveForms(object):
         return correlated_noise
 
 # function
-def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit):
+def generate_poisson_uniform_firingrate2(rec_len_sec, sample_rate, unit,
+                                        firingrate_min, firingrate_max):
    
     # 1ms wide bins used for now;
     bin_width = 0.001 # ms precise bins;
     
     # sample uniformly to get firing rate between 1-10Hz
-    f_rate = np.random.rand()*9+1
+    #f_rate = np.random.rand()*9+1
+    f_rate = np.random.rand()*(firingrate_max-firingrate_min)+firingrate_min
     
     # set threshold for spiking for a poisson process
     poisson_thresh = f_rate*bin_width
@@ -450,7 +452,8 @@ def generate_synthetic_data(root_dir,
                             shifts, units,
                             temps,
                             radius,
-                            geom):
+                            geom,
+                            firingrate_min, firingrate_max):
     
     '''
     
@@ -473,7 +476,8 @@ def generate_synthetic_data(root_dir,
     for k in range(n_units):
         times, scale = generate_poisson_uniform_firingrate2(rec_len_sec,
                                                             sample_rate,
-                                                            k)
+                                                            k,
+                                                            firingrate_min, firingrate_max)
         #print ("Unit: ", k, " spikes: ", times)
         n_spikes.append(times)
         scales.append(scale)
@@ -481,10 +485,12 @@ def generate_synthetic_data(root_dir,
     #print (len(n_spikes))
 
     spike_train = np.zeros((0,2),'int32')
+    windows = []
     # insert spikes every chunk of data
     for k in range(1,spike_chunks.shape[0]):
 
         window = [spike_chunks[k-1], spike_chunks[k]]
+        windows.append(window)
 
         print ("window: ", window, ", shift: ", shifts[k-1], " (inter channel units)")
         temps_insert = shift_templates_all(units, geom, temps.copy(), 
@@ -567,7 +573,7 @@ def generate_synthetic_data(root_dir,
     # save all data including raw binary
     np.save(root_dir + 'ground_truth/spike_train_ground_truth.npy',spike_train)
     
-    return data_synthetic
+    return data_synthetic, windows, spike_train
 
 def visualize_traces(data_synthetic, time1, time2):
     

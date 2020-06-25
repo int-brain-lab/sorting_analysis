@@ -374,7 +374,6 @@ class Match_to_ground_truth(object):
         #print ("calling matchi units")
         self.match_units('/match_to_truth/')
         
-        
         # SWITCH IDENTITY AND RERUN
         
         # load ground truth data
@@ -812,29 +811,5 @@ def plot_single_unit_parallel(units,
                  clrs,
                  scale_amplitude,
                  save_fig)
-
-    #spike_train_gt = np.load(r
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+   
     
